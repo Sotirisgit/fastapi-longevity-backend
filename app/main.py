@@ -1,11 +1,11 @@
 from fastapi import FastAPI
-from app.routes import users, wearable
+from app.routes import users, wearable_data
 
 app = FastAPI()
 
 # Register the /users route
 app.include_router(users.router)
-app.include_router(wearable.router)
+app.include_router(wearable_data.router)
 
 
 @app.get("/")
