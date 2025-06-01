@@ -17,18 +17,17 @@ def get_wearable_data():
     response = supabase.table("wearable_data").select("*").execute()
     records = response.data
 
-    # Group values by metric type
     grouped = defaultdict(list)
     for record in records:
         metric = record.get("metric_type")
         value = record.get("value")
-        timestamp = record.get("timestamp")
+        timestamp = record.get("recorded_at")  # 🔁 corrected field
 
-        # Skip incomplete rows
         if not all([metric, value, timestamp]):
             continue
 
         grouped[metric].append({"value": value, "timestamp": timestamp})
 
     return grouped
+
 
