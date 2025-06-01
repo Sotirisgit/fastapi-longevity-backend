@@ -1,44 +1,28 @@
+# app/routes/wearable_data.py
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
-from datetime import datetime
-import psycopg2
+from supabase import create_client, Client
 import os
 from dotenv import load_dotenv
-
-router = APIRouter()
+from collections import defaultdict
 
 load_dotenv()
 
-def get_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("SUPABASE_DB_HOST"),
-        database=os.getenv("SUPABASE_DB_NAME"),
-        user=os.getenv("SUPABASE_DB_USER"),
-        password=os.getenv("SUPABASE_DB_PASSWORD"),
-        port=os.getenv("SUPABASE_DB_PORT")
-    )
+router = APIRouter()
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
+supabase: Client = create_client(supabase_url, supabase_key)
 
 @router.get("/wearable/")
 def get_wearable_data():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT user_id, metric_type, value, unit, timestamp 
-        FROM wearable_data
-        ORDER BY timestamp DESC
-        LIMIT 100
-    """)
-    rows = cursor.fetchall()
-    conn.close()
+    response = supabase.table("wearable_data").select("*").execute()
+    records = response.data
 
-    wearable_data = []
-    for row in rows:
-        wearable_data.append({
-            "user_id": row[0],
-            "metric_type": row[1],
-            "value": row[2],
-            "unit": row[3],
-            "timestamp": row[4].isoformat() if isinstance(row[4], datetime) else row[4]
-        })
+    # Group values by metric type
+    grouped = defaultdict(list)
+    for record in records:
+        metric = record["metric_type"]
+        value = record["value"]
+        timestamp = record["timestamp"]
+        grouped[metric].append({"value": value, "timestamp": timestamp})
 
-    return JSONResponse(content={"wearable_data": wearable_data})
+    return grouped
