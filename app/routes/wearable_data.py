@@ -20,9 +20,15 @@ def get_wearable_data():
     # Group values by metric type
     grouped = defaultdict(list)
     for record in records:
-        metric = record["metric_type"]
-        value = record["value"]
-        timestamp = record["timestamp"]
+        metric = record.get("metric_type")
+        value = record.get("value")
+        timestamp = record.get("timestamp")
+
+        # Skip incomplete rows
+        if not all([metric, value, timestamp]):
+            continue
+
         grouped[metric].append({"value": value, "timestamp": timestamp})
 
     return grouped
+
